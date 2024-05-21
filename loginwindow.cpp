@@ -51,6 +51,14 @@ void LoginWindow::on_merchantButton_clicked()
     this->close(); // 关闭当前登录界面
 }
 
+void LoginWindow::paintEvent(QPaintEvent *e)
+{
+    QStyleOption opt;
+    opt.init(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+}
+
 
 LoginWindow::~LoginWindow()
 {

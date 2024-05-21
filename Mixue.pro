@@ -25,6 +25,7 @@ SOURCES += \
     main.cpp \
     merchant.cpp \
     merchantloginwindow.cpp \
+    merchantwidget.cpp \
     order.cpp \
     widget.cpp
 
@@ -35,6 +36,7 @@ HEADERS += \
     loginwindow.h \
     merchant.h \
     merchantloginwindow.h \
+    merchantwidget.h \
     order.h \
     structural.h \
     widget.h
@@ -45,6 +47,7 @@ FORMS += \
     customerwidget.ui \
     loginwindow.ui \
     merchantloginwindow.ui \
+    merchantwidget.ui \
     widget.ui
 
 # Default rules for deployment.

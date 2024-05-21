@@ -6,6 +6,8 @@
 #include <QDebug>
 #include<QMessageBox>
 #include <QSqlError>
+#include <QPainter>
+#include <QStyleOption>
 
 
 namespace Ui {
@@ -20,6 +22,7 @@ public:
     explicit LoginWindow(QWidget *parent = nullptr);
     ~LoginWindow();
     void connectsql();
+    void paintEvent(QPaintEvent *e);
 
 private slots:
     void on_customerButton_clicked();
