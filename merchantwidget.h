@@ -2,6 +2,11 @@
 #define MERCHANTWIDGET_H
 
 #include <QWidget>
+#include <QSqlQuery>
+#include <QSqlError>
+#include<QSqlDatabase>
+#include<QMessageBox>
+#include<QDebug>
 #include "structural.h"
 #include<vector>
 using namespace std;
@@ -17,6 +22,8 @@ class MerchantWidget : public QWidget
 public:
     explicit MerchantWidget(int m_id,QWidget *parent = nullptr);
     ~MerchantWidget();
+    void getMenu();
+    void connectsql();
     QString name;    //店铺名字
     QString locate;    //位置
     QString time;    //营业时间
@@ -26,6 +33,7 @@ public:
 
 private:
     Ui::MerchantWidget *ui;
+    QSqlDatabase db;
 };
 
 #endif // MERCHANTWIDGET_H

@@ -23,27 +23,55 @@
       <attribute name="title">
        <string>菜单</string>
       </attribute>
-      <widget class="QTableWidget" name="menuTableWidget">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QTabWidget" name="menuTabWidget">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>醇香奶茶</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QTableWidget" name="milkTeaTableWidget"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_2">
+          <attribute name="title">
+           <string>真鲜果茶</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QTableWidget" name="fruitTeaTableWidget"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="addButton">
+         <property name="text">
+          <string>添加菜品</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="orderTab">
+      <attribute name="title">
+       <string>订单</string>
+      </attribute>
+      <widget class="QTableWidget" name="tableWidget">
        <property name="geometry">
         <rect>
-         <x>40</x>
-         <y>30</y>
+         <x>70</x>
+         <y>60</y>
          <width>256</width>
          <height>192</height>
         </rect>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="addButton">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>290</y>
-         <width>80</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>添加菜品</string>
        </property>
       </widget>
      </widget>
