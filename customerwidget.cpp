@@ -49,7 +49,7 @@ CustomerWidget::CustomerWidget(int m_id,QWidget *parent) :
 
     // 初始化订单表格
     QStringList headerLabels;
-    headerLabels << "订单序号" << "配送方式" << "店铺" << "内容" << "状态" << "总额"<<"操作";
+    headerLabels << "订单序号" << "配送方式" << "店铺" << "内容" << "状态" << "总额"<<"操作"<<"更多操作";
     ui->orderTableWidget->setColumnCount(headerLabels.count());
     ui->orderTableWidget->setHorizontalHeaderLabels(headerLabels);
     // 设置选择模式为整行选择
@@ -504,6 +504,12 @@ for (const auto& order : OrderVec)
         showOrderDetailDialog(order);
     });
 
+    // 为每一行添加删除按钮
+    QPushButton *deleteButton = new QPushButton("退单");
+    //int _id = order.id;
+    connect(deleteButton, &QPushButton::clicked, this, [this, rowcount]() { onDeleteButtonClicked(rowcount); });
+    ui->orderTableWidget->setCellWidget(rowcount, 7, deleteButton);
+
     ui->orderTableWidget->setItem(rowcount,0,column);
     ui->orderTableWidget->setItem(rowcount,1,column1);
     ui->orderTableWidget->setItem(rowcount,2,column2);
@@ -513,6 +519,63 @@ for (const auto& order : OrderVec)
     ui->orderTableWidget->setCellWidget(rowcount, 6, detailButton);
 
 }
+}
+
+void CustomerWidget::onDeleteButtonClicked(int row) {
+    int orderId = ui->orderTableWidget->item(row, 0)->text().toInt(); // 假设order_id在第一列
+    qDebug()<<orderId;
+//    QSqlDatabase db = QSqlDatabase::database();
+//    if (!db.isOpen()) {
+//        if (!db.open()) {
+//            QMessageBox::critical(this, "错误", "无法连接到数据库");
+//            return;
+//        }
+//    }
+
+    QSqlQuery query(db);
+
+    // 检查订单状态
+    QString checkOrderStateQuery = QString("SELECT state FROM Orders WHERE order_id = %1").arg(orderId);
+    if (!query.exec(checkOrderStateQuery)) {
+        qDebug() << "Error checking order state:" << query.lastError().text();
+        return;
+    }
+
+    if (query.next()) {
+        int state = query.value("state").toInt();
+        if (state == 1) { // 订单已完成
+            QMessageBox::warning(this, "无法退单", "该订单已完成，无法退单。");
+            return;
+        }
+    }
+
+    db.transaction(); // 开启事务
+
+    // 删除 DishInOrder 中对应的记录
+//    query.prepare("DELETE FROM DishInOrder WHERE order_id = :order_id");
+//    query.bindValue(":order_id", orderId);
+    QString deleteDishInOrderQuery = QString("DELETE FROM DishInOrder WHERE order_id = %1").arg(orderId);
+    if (!query.exec(deleteDishInOrderQuery)) {
+        db.rollback(); // 回滚事务
+        QMessageBox::critical(this, "错误", "删除订单中的菜品失败: " + query.lastError().text());
+        return;
+    }
+
+    // 删除 Orders 中对应的记录
+//    query.prepare("DELETE FROM Orders WHERE order_id = :order_id");
+//    query.bindValue(":order_id", orderId);
+    QString deleteOrderQuery = QString("DELETE FROM Orders WHERE order_id = %1").arg(orderId);
+    if (!query.exec(deleteOrderQuery)) {
+        db.rollback(); // 回滚事务
+        QMessageBox::critical(this, "错误", "删除订单失败: " + query.lastError().text());
+        return;
+    }
+
+    db.commit(); // 提交事务
+
+    // 从表格中移除该行
+    ui->orderTableWidget->removeRow(row);
+    QMessageBox::information(this, "成功", "退单成功，退款返回至原支付路径");
 }
 
 void CustomerWidget::showOrderDetailDialog(const Order& order)

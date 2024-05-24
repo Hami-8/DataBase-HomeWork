@@ -37,6 +37,8 @@ public:
     int id;
     bool IsValidPhoneNumber(const QString & phoneNum);
 
+    void onDeleteButtonClicked(int row);  //订单删除按钮
+
 private slots:
     void updateTotalPrice();    //更新购物车中的总价钱
 
