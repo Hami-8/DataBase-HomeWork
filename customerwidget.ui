@@ -121,7 +121,7 @@ QTabBar::tab:selected {
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>2</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -433,7 +433,39 @@ font: 11pt &quot;Ubuntu&quot;;</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_11">
        <item>
-        <widget class="QTableWidget" name="orderTableWidget"/>
+        <widget class="QStackedWidget" name="stackedWidget">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="page_7">
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QTableWidget" name="orderTableWidget"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="teaRankButton">
+             <property name="text">
+              <string>您的奶茶排行榜</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_8">
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <item>
+            <widget class="QTableWidget" name="rankTableWidget"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="backToOrderedButton">
+             <property name="text">
+              <string>返回</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
        </item>
       </layout>
      </widget>

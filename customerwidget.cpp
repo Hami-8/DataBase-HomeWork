@@ -20,6 +20,7 @@ CustomerWidget::CustomerWidget(int m_id,QWidget *parent) :
     ui->homePage_stacked->setCurrentIndex(0);
     ui->orderStackedWidget->setCurrentIndex(0);
     ui->menuTabWidget->setCurrentIndex(0);
+    ui->stackedWidget->setCurrentIndex(0);
     //初始化商店表格
     // 设置选择模式为整行选择
     ui->shopTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -64,6 +65,8 @@ CustomerWidget::CustomerWidget(int m_id,QWidget *parent) :
 
     // 设置表头字体
     header4->setFont(QFont("Arial", 12)); // 使用Arial字体，大小为12像素
+
+
 
     //将一些lineEdit设置为只读
     ui->shopLineEdit->setReadOnly(1);
@@ -162,6 +165,8 @@ void CustomerWidget::refresh()
 {
     // 清空购物车界面的表格
     ui->cartTableWidget->clearContents();
+    // 将行数设置为 0，从而删除所有行
+    ui->cartTableWidget->setRowCount(0);
     // 清空店铺菜单界面的表格
     ui->milkTeaTableWidget->clearContents();
     ui->fruitTeaTableWidget->clearContents();
@@ -519,6 +524,7 @@ for (const auto& order : OrderVec)
     ui->orderTableWidget->setCellWidget(rowcount, 6, detailButton);
 
 }
+    teaRank();  //刷新奶茶排行榜
 }
 
 void CustomerWidget::onDeleteButtonClicked(int row) {
@@ -552,8 +558,6 @@ void CustomerWidget::onDeleteButtonClicked(int row) {
     db.transaction(); // 开启事务
 
     // 删除 DishInOrder 中对应的记录
-//    query.prepare("DELETE FROM DishInOrder WHERE order_id = :order_id");
-//    query.bindValue(":order_id", orderId);
     QString deleteDishInOrderQuery = QString("DELETE FROM DishInOrder WHERE order_id = %1").arg(orderId);
     if (!query.exec(deleteDishInOrderQuery)) {
         db.rollback(); // 回滚事务
@@ -562,8 +566,6 @@ void CustomerWidget::onDeleteButtonClicked(int row) {
     }
 
     // 删除 Orders 中对应的记录
-//    query.prepare("DELETE FROM Orders WHERE order_id = :order_id");
-//    query.bindValue(":order_id", orderId);
     QString deleteOrderQuery = QString("DELETE FROM Orders WHERE order_id = %1").arg(orderId);
     if (!query.exec(deleteOrderQuery)) {
         db.rollback(); // 回滚事务
@@ -575,6 +577,7 @@ void CustomerWidget::onDeleteButtonClicked(int row) {
 
     // 从表格中移除该行
     ui->orderTableWidget->removeRow(row);
+    teaRank();
     QMessageBox::information(this, "成功", "退单成功，退款返回至原支付路径");
 }
 
@@ -723,15 +726,6 @@ void CustomerWidget::on_payButton_clicked()
     QSqlQuery query(db);
 
     // 插入订单信息到 Orders 表中
-//    query.prepare("INSERT INTO Orders (customer_id, merchant_id, state, delivery_way, total_money) "
-//                  "VALUES (:customer_id, :merchant_id, :state, :delivery_way, :total_money)");
-//    query.bindValue(":customer_id", id);
-//    query.bindValue(":merchant_id", order->merchant.id);
-//    //query.bindValue(":order_date", QDateTime::currentDateTime()); // 当前时间作为订单时间
-//    query.bindValue(":state", 0); // 初始状态为进行中
-//    query.bindValue(":delivery_way", order->delivery_way);
-//    query.bindValue(":total_money", order->m_sum);
-
     QString queryString = QString("INSERT INTO Orders (customer_id, merchant_id, state, delivery_way, total_money) "
                                   "VALUES (%1, %2, %3, %4, %5)")
                             .arg(id)
@@ -741,48 +735,69 @@ void CustomerWidget::on_payButton_clicked()
                             .arg(order->m_sum);
     if (!query.exec(queryString)) {
         qDebug() << "Error inserting order into database:" << query.lastError().text();
-        //return;
+        if (query.lastError().text().contains("Order cannot be empty")) {
+            QMessageBox::warning(this, "错误", "订单内容不能为空！");
+        } else {
+            QMessageBox::warning(this, "错误", "插入订单时发生错误！");
+        }
+        return;
     }
 
     // 获取刚插入订单的订单号
     int orderId = query.lastInsertId().toInt();
 
+
 //    // 插入订单中包含的菜品信息到 DishInOrder 表中
 //    for (const auto& food : order->FoodVec) {
-//        query.prepare("INSERT INTO DishInOrder (order_id, dish_id, count) "
-//                      "VALUES (:order_id, :dish_id, :count)");
-//        query.bindValue(":order_id", orderId);
-//        query.bindValue(":dish_id", food.id);
-//        query.bindValue(":count", food.quantity);
-//        if (!query.exec()) {
+//        QString insertQuery = QString("INSERT INTO DishInOrder (order_id, dish_id, count) "
+//                                      "VALUES (%1, %2, %3)")
+//                                  .arg(orderId)
+//                                  .arg(food.id)
+//                                  .arg(1);
+//        if (!query.exec(insertQuery)) {
 //            qDebug() << "Error inserting dish in order into database:" << query.lastError().text();
-//            return;
+//            //return;
 //        }
 //    }
 
     // 插入订单中包含的菜品信息到 DishInOrder 表中
     for (const auto& food : order->FoodVec) {
-        QString insertQuery = QString("INSERT INTO DishInOrder (order_id, dish_id, count) "
-                                      "VALUES (%1, %2, %3)")
-                                  .arg(orderId)
-                                  .arg(food.id)
-                                  .arg(1);
-        if (!query.exec(insertQuery)) {
-            qDebug() << "Error inserting dish in order into database:" << query.lastError().text();
+        // 先检查是否已存在相同的 order_id 和 dish_id 组合
+        QString checkQuery = QString("SELECT COUNT(*) FROM DishInOrder WHERE order_id = %1 AND dish_id = %2")
+                             .arg(orderId)
+                             .arg(food.id);
+        if (query.exec(checkQuery)) {
+            query.next();
+            int count = query.value(0).toInt();
+            if (count == 0) {
+                // 不存在相同的组合，可以插入
+                QString insertQuery = QString("INSERT INTO DishInOrder (order_id, dish_id, count) "
+                                              "VALUES (%1, %2, %3)")
+                                      .arg(orderId)
+                                      .arg(food.id)
+                                      .arg(1);
+                if (!query.exec(insertQuery)) {
+                    qDebug() << "Error inserting dish in order into database:" << query.lastError().text();
+                    //return;
+                }
+            } else {
+                // 存在相同的组合，更新 count 属性 +1
+                QString updateQuery = QString("UPDATE DishInOrder SET count = count + 1 "
+                                              "WHERE order_id = %1 AND dish_id = %2")
+                                      .arg(orderId)
+                                      .arg(food.id);
+                if (!query.exec(updateQuery)) {
+                    qDebug() << "Error updating dish in order count in database:" << query.lastError().text();
+                    //return;
+                }
+            }
+        } else {
+            qDebug() << "Error checking for existing dish in order:" << query.lastError().text();
             //return;
         }
     }
 
-//    // 更新 Dish 表，减去订单中已购买的菜品的数量
-//    for (const auto& food : order->FoodVec) {
-//        query.prepare("UPDATE Dish SET quantity = quantity - :count WHERE dish_id = :dish_id");
-//        query.bindValue(":count", food.quantity);
-//        query.bindValue(":dish_id", food.id);
-//        if (!query.exec()) {
-//            qDebug() << "Error updating dish quantity in database:" << query.lastError().text();
-//            return;
-//        }
-//    }
+
 
     // 更新 Dish 表，减去订单中已购买的菜品的数量
     for (const auto& food : order->FoodVec) {
@@ -805,6 +820,46 @@ void CustomerWidget::on_payButton_clicked()
     QMessageBox::information(this, "提示", "结算成功！");
     refresh();
     ui->customerWidget->setCurrentIndex(2);
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void CustomerWidget::teaRank()
+{
+    // 清空排行榜表格
+    ui->rankTableWidget->clearContents();
+    // 将行数设置为 0，从而删除所有行
+    ui->rankTableWidget->setRowCount(0);
+
+    QSqlQuery query(db);
+    query.exec(QString("SELECT * FROM UserOrderedDishes WHERE customer_id = %1").arg(id));
+
+    // 获取列数
+    int columnCount = query.record().count();
+    // 设置表头
+    ui->rankTableWidget->setColumnCount(columnCount);
+    ui->rankTableWidget->setHorizontalHeaderLabels(QStringList() << "用户ID" << "奶茶/果茶" << "您点过的数量");
+    // 设置选择模式为整行选择
+    ui->rankTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->rankTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    // 调整表头，使其适应内容
+    ui->rankTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // 获取表头
+    QHeaderView *header5 = ui->rankTableWidget->horizontalHeader();
+    // 设置表头字体
+    header5->setFont(QFont("Arial", 12)); // 使用Arial字体，大小为12像素
+
+    int row = 0;
+    while (query.next()) {
+        ui->rankTableWidget->insertRow(row);
+        for (int col = 0; col < columnCount; ++col) {
+            QTableWidgetItem *item = new QTableWidgetItem(query.value(col).toString());
+            ui->rankTableWidget->setItem(row, col, item);
+        }
+        row++;
+    }
+
+    //调整列宽，适应内容
+    ui->rankTableWidget->resizeColumnsToContents();
 }
 
 
@@ -871,4 +926,14 @@ void CustomerWidget::on_changePasswordButton_clicked()
 {
     changePasswdWidget.show();
     this->hide();
+}
+
+void CustomerWidget::on_teaRankButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(1);
+}
+
+void CustomerWidget::on_backToOrderedButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(0);
 }

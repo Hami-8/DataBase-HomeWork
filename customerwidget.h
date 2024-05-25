@@ -7,6 +7,7 @@
 #include<QSqlDatabase>
 #include<QMessageBox>
 #include<QDebug>
+#include <QSqlRecord>
 #include "customer_change_passwd.h"
 
 
@@ -39,6 +40,8 @@ public:
 
     void onDeleteButtonClicked(int row);  //订单删除按钮
 
+    void teaRank();   //更新奶茶排行榜
+
 private slots:
     void updateTotalPrice();    //更新购物车中的总价钱
 
@@ -68,6 +71,10 @@ private slots:
     void on_savePhoneButton_clicked();
 
     void on_changePasswordButton_clicked();
+
+    void on_teaRankButton_clicked();
+
+    void on_backToOrderedButton_clicked();
 
 private:
     Ui::CustomerWidget *ui;
