@@ -28,7 +28,6 @@ private slots:
     void on_customerButton_clicked();
     void on_merchantButton_clicked();
 
-    void on_btn_merchant_clicked();
 
 private:
     Ui::LoginWindow *ui;
